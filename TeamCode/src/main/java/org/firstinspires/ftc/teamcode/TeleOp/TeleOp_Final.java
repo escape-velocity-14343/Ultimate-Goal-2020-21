@@ -1,6 +1,9 @@
 package org.firstinspires.ftc.teamcode.TeleOp;
 
 //importing the statements for the code below
+import com.arcrobotics.ftclib.hardware.RevIMU;
+import com.arcrobotics.ftclib.hardware.ServoEx;
+import com.arcrobotics.ftclib.hardware.motors.Motor;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -21,10 +24,9 @@ public class TeleOp_Final extends OpMode {
 
     //defining all of the variables needed for the code
     private ElapsedTime runtime = new ElapsedTime();
-    private DcMotor armMotor, armMotor2, clawMotor, LFMotor, LBMotor, RFMotor, RBMotor;
-    private Servo rotateServo, clawServo, foundServo, foundServo2, skystoneServo, skystoneClamp;
-    private BNO055IMU imu;
-    private Orientation lastAngles = new Orientation();
+    private Motor LFMotor, LBMotor, RFMotor, RBMotor;
+    private RevIMU imu;
+    private double lastAngles = 0;
     private boolean fieldRelativeMode = false;
     private double globalAngle, speed = 0.75;
 
@@ -33,38 +35,18 @@ public class TeleOp_Final extends OpMode {
     public void init() throws IllegalArgumentException {
 
         //grabbing the hardware from the expansion hubs, and the configuration
-        LFMotor  = hardwareMap.get(DcMotor.class, "LF Motor");
-        LBMotor  = hardwareMap.get(DcMotor.class, "LB Motor");
-        RFMotor  = hardwareMap.get(DcMotor.class, "RF Motor");
-        RBMotor  = hardwareMap.get(DcMotor.class, "RB Motor");
-        armMotor = hardwareMap.get(DcMotor.class, "Arm Motor 1");
-        armMotor2 = hardwareMap.get(DcMotor.class, "Arm Motor 2");
-        clawMotor = hardwareMap.get(DcMotor.class,"Claw Up Motor");
+        LFMotor  = new Motor(hardwareMap, "LF Motor", Motor.GoBILDA.RPM_1150);
+        LBMotor  = new Motor(hardwareMap, "LB Motor", Motor.GoBILDA.RPM_1150);
+        RFMotor  = new Motor(hardwareMap, "RF Motor", Motor.GoBILDA.RPM_1150);
+        RBMotor  = new Motor(hardwareMap, "RB Motor", Motor.GoBILDA.RPM_1150);
 
-        rotateServo = hardwareMap.get(Servo.class, "Rotate Servo");
-        clawServo = hardwareMap.get(Servo.class, "Claw Servo");
-        foundServo = hardwareMap.get(Servo.class, "found servo");
-        foundServo2 = hardwareMap.get(Servo.class, "found servo 2");
-        skystoneServo = hardwareMap.get(Servo.class, "Skystone servo");
-        skystoneClamp = hardwareMap.get(Servo.class, "Skystone Clamp");
-
-        imu = hardwareMap.get(BNO055IMU.class, "imu");
+        imu = new RevIMU(hardwareMap, "imu");
 
         //reversing the motors that need to be reversed, otherwise it sets it as forward
-        LFMotor.setDirection(DcMotor.Direction.FORWARD);
-        LBMotor.setDirection(DcMotor.Direction.FORWARD);
-        RFMotor.setDirection(DcMotor.Direction.REVERSE);
-        RBMotor.setDirection(DcMotor.Direction.REVERSE);
-        armMotor.setDirection(DcMotor.Direction.REVERSE);
-        armMotor2.setDirection(DcMotor.Direction.REVERSE);
-        clawMotor.setDirection(DcMotor.Direction.FORWARD);
-
-        rotateServo.setDirection(Servo.Direction.FORWARD);
-        clawServo.setDirection(Servo.Direction.FORWARD);
-        foundServo2.setDirection(Servo.Direction.REVERSE);
-        foundServo.setDirection(Servo.Direction.FORWARD);
-        skystoneServo.setDirection(Servo.Direction.FORWARD);
-        skystoneClamp.setDirection(Servo.Direction.FORWARD);
+        LFMotor.setInverted(false);
+        LBMotor.setInverted(false);
+        RFMotor.setInverted(true);
+        RBMotor.setInverted(true);
 
         //setting up the IMU on the expansion hubs, for our use
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
@@ -74,7 +56,7 @@ public class TeleOp_Final extends OpMode {
         parameters.accelUnit = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
         parameters.loggingEnabled = false;
 
-        imu.initialize(parameters);
+        imu.init(parameters);
 
         telemetry.addData("Status", "Initialized");
     }
@@ -158,71 +140,17 @@ public class TeleOp_Final extends OpMode {
         }
 
         //setting the powers for each of the motors
-        LFMotor.setPower(Range.clip(LFPower, -speed, speed));
-        LBMotor.setPower(Range.clip(LBPower, -speed, speed));
-        RFMotor.setPower(Range.clip(RFPower, -speed, speed));
-        RBMotor.setPower(Range.clip(RBPower, -speed, speed));
+        LBMotor.setRunMode(Motor.RunMode.RawPower);
+        LFMotor.setRunMode(Motor.RunMode.RawPower);
+        RFMotor.setRunMode(Motor.RunMode.RawPower);
+        RBMotor.setRunMode(Motor.RunMode.RawPower);
 
-        //getting the double reverse 4 bar linkage to move up and down
-        if (slidesValue == 0){
-            clawMotor.setPower(-0.2);
-        } else if (slidesValue >= 0) {
-            clawMotor.setPower(Range.clip(slidesValue, -0.7 , -0.02));
-        }
+        LFMotor.set(Range.clip(LFPower, -speed, speed));
+        LBMotor.set(Range.clip(LBPower, -speed, speed));
+        RFMotor.set(Range.clip(RFPower, -speed, speed));
+        RBMotor.set(Range.clip(RBPower, -speed, speed));
 
-        //moving the claw servo to pick up or release the stone
-        if (gamepad1.x) {
-            clawServo.setPosition(Servo.MAX_POSITION);
-        }
-        if (gamepad1.y) {
-            clawServo.setPosition(((Servo.MAX_POSITION - Servo.MIN_POSITION)/2) + Servo.MIN_POSITION + 0.05);
-        }
-
-        //Using the intake, intaking or releasing
-        if(gamepad1.right_bumper){
-            armMotor.setPower(-0.5);
-            armMotor2.setPower(0.5);
-        } else if(gamepad1.left_bumper){
-            armMotor.setPower(0.5);
-            armMotor2.setPower(-0.5);
-        } else{
-            armMotor.setPower(0);
-            armMotor2.setPower(0);
-        }
-
-        //moving the claw to move it from the inside of the robot to the outside
-        if (gamepad2.right_bumper){
-            rotateServo.setPosition(Servo.MIN_POSITION);
-        } else if(gamepad2.left_bumper){
-            rotateServo.setPosition(Servo.MAX_POSITION);
-        }
-
-        //using the foundation servos to pick up the foundation
-        if (gamepad2.x) {
-            telemetry.addData("x","pressed");
-            foundServo.setPosition(0.4);
-            foundServo2.setPosition(0.6);
-        }
-        if (gamepad2.y) {
-            telemetry.addData("y","pressed");
-            foundServo.setPosition(0.6);
-            foundServo2.setPosition(0.8);
-
-        }
-
-        //using the stone claw to pick up the stones
-        if (gamepad2.a) {
-            telemetry.addData("a","pressed");
-            skystoneServo.setPosition(0.527);
-            skystoneClamp.setPosition(0.9);
-        }
-        if (gamepad2.b) {
-            telemetry.addData("b", "pressed");
-            skystoneClamp.setPosition(0.85);
-            skystoneServo.setPosition(0.49);
-        }
-            telemetry.addData("Status", "Run Time: " + runtime.toString());
-
+        telemetry.addData("Status", "Run Time: " + runtime.toString());
     }
 
 
@@ -230,21 +158,19 @@ public class TeleOp_Final extends OpMode {
     public void stop() {
     }
 
-    //reseting the IMU
-    private void resetAngle()
-    {
-        lastAngles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
-
+    //resetting the angle in the IMU
+    public void resetAngle() {
+        imu.reset();
+        lastAngles = 0;
         globalAngle = 0;
     }
 
-    //getting the angle from the IMU
-    private double getAngle()
-    {
+    //getting the current angle of the IMU
+    public double getAngle() {
 
-        Orientation angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+        double angles = imu.getAngles()[0];
 
-        double deltaAngle = angles.firstAngle - lastAngles.firstAngle;
+        double deltaAngle = angles - lastAngles;
 
         if (deltaAngle < -180)
             deltaAngle += 360;
@@ -257,5 +183,4 @@ public class TeleOp_Final extends OpMode {
 
         return globalAngle;
     }
-
 }
