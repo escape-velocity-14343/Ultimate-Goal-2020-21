@@ -6,6 +6,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class WheelSubsystem extends SubsystemBase {
     private final Motor m_wheel;
+    private boolean m_atTargetLocation = true;
 
     public WheelSubsystem(final HardwareMap hardwareMap, final String name, final boolean inverted) {
         m_wheel = new Motor(hardwareMap, name, Motor.GoBILDA.RPM_1150);
@@ -18,6 +19,7 @@ public class WheelSubsystem extends SubsystemBase {
 
     public void driveDistance(double power, double damp, double distance) {
         //m_wheel.setRunMode(Motor.RunMode.PositionControl);
+        m_atTargetLocation = false;
         power = damp * power;
         m_wheel.resetEncoder();
 
@@ -39,11 +41,20 @@ public class WheelSubsystem extends SubsystemBase {
         //Stop and change modes back to normal
         m_wheel.set(0);
         m_wheel.resetEncoder();
+        m_atTargetLocation = true;
     }
 
-//    public void drivePower(double power, double damp) {
-//        m_wheel.setRunMode(Motor.RunMode.RawPower);
-//        power = damp * power;
-//        m_wheel.set(power);
-//    }
+    public void resetEncoder() {
+        m_wheel.resetEncoder();
+    }
+
+    public boolean isDone() {
+        return m_atTargetLocation;
+    }
+
+    public void drivePower(double power, double damp) {
+        m_wheel.setRunMode(Motor.RunMode.RawPower);
+        power = damp * power;
+        m_wheel.set(power);
+    }
 }
