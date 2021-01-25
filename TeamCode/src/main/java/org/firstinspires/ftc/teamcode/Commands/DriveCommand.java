@@ -10,13 +10,18 @@ import org.firstinspires.ftc.teamcode.Subsystems.DriveSubsystem;
 
 public class DriveCommand extends CommandBase {
     private final DriveSubsystem m_drive;
-    private final Pose2d m_target;
+    private final double m_distance;
     private final double m_power;
+    private int[] direction = new int[4];
 
-    public DriveCommand(DriveSubsystem drive, double distance, double angle, double power) {
+    public DriveCommand(DriveSubsystem drive, double distance, double power) {
         m_drive = drive;
-        m_target = new Pose2d(new Translation2d(distance * Math.sin(angle), distance * Math.cos(angle)), new Rotation2d(Math.toRadians(angle)));
+        m_distance = distance;
         m_power = power;
+        direction[0] = 1;
+        direction[1] = 1;
+        direction[2] = 1;
+        direction[3] = 1;
         addRequirements(drive);
     }
 
@@ -27,7 +32,7 @@ public class DriveCommand extends CommandBase {
 
     @Override
     public void execute() {
-
+        m_drive.drive(m_power, m_distance, direction);
     }
 
     @Override
@@ -37,11 +42,6 @@ public class DriveCommand extends CommandBase {
 
     @Override
     public void end(boolean interrupted) {
-        int[] direction = new int[4];
-        direction[0] = 1;
-        direction[1] = 1;
-        direction[2] = 1;
-        direction[3] = 1;
         m_drive.drive(0, direction);
     }
 }

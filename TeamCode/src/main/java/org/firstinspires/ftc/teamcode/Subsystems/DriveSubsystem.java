@@ -1,11 +1,13 @@
 package org.firstinspires.ftc.teamcode.Subsystems;
 
 import com.arcrobotics.ftclib.command.SubsystemBase;
+import com.arcrobotics.ftclib.hardware.RevIMU;
 
 import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.hardwareMap;
 
 public class DriveSubsystem extends SubsystemBase {
     private WheelSubsystem LFMotor, LRMotor, RFMotor, RRMotor;
+    private RevIMU imu;
     double damp = 0.5;
 
     public DriveSubsystem() {
@@ -13,6 +15,8 @@ public class DriveSubsystem extends SubsystemBase {
         LRMotor = new WheelSubsystem(hardwareMap, "LB Motor", false);
         RFMotor = new WheelSubsystem(hardwareMap, "RF Motor", true);
         RRMotor = new WheelSubsystem(hardwareMap, "RB Motor", true);
+        imu = new RevIMU(hardwareMap, "imu");
+        imu.init();
     }
 
     /**
@@ -46,5 +50,13 @@ public class DriveSubsystem extends SubsystemBase {
 
     public boolean isDone() {
         return LFMotor.isDone() && LRMotor.isDone() && RFMotor.isDone() && RRMotor.isDone();
+    }
+
+    public double getAngle() {
+        return imu.getAngles()[0];
+    }
+
+    public void resetAngle() {
+        imu.reset();
     }
 }
