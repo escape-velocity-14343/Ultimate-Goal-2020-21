@@ -68,14 +68,25 @@ public class Blue extends CommandOpMode {
         Waypoint diskStart = new StartWaypoint(disks);
         ppCommand = new PurePursuitCommand(m_robotDrive, m_odometry, start, disk);
 
-        //Run ppCommand
+        Pose2d highGoal = new Pose2d(160, 187, zero);
+        Waypoint highGoalEnd = new EndWaypoint(highGoal, 30, 30, 4, 1, 1);
+        Waypoint highGoalStart = new StartWaypoint(highGoal);
 
+        ppCommand = new PurePursuitCommand(m_robotDrive, m_odometry, diskStart, highGoalEnd);
+
+        Pose2d powerShot = new Pose2d(160, 167, zero);
+        Waypoint powerShotEnd = new EndWaypoint(powerShot, 30, 30, 4, 1, 1);
+        Waypoint powerShotStart = new StartWaypoint(powerShot);
+
+        ppCommand = new PurePursuitCommand(m_robotDrive, m_odometry, highGoalStart, powerShotEnd);
+
+        //Run ppCommand
         Pose2d square;
         Waypoint squar;
         int detection = 0;
 
         if (detection == 0) {
-            square = new Pose2d(150, 210, zero); // Square A
+            square = new Pose2d(160, 197, zero); // Square A
         } else if (detection == 1) {
             //Pick up 1 disk
             square = new Pose2d(175, 187, zero); // Square B
@@ -87,7 +98,7 @@ public class Blue extends CommandOpMode {
         squar = new EndWaypoint(square, 30, 30, 4, 1, 1);
         Waypoint squarStart = new StartWaypoint(square);
 
-        ppCommand = new PurePursuitCommand(m_robotDrive, m_odometry, diskStart, squar);
+        ppCommand = new PurePursuitCommand(m_robotDrive, m_odometry, powerShotStart, squar);
 
         //Run ppCommand
         //Place the wobble goal
