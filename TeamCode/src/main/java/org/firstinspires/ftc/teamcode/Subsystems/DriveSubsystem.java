@@ -1,13 +1,17 @@
 package org.firstinspires.ftc.teamcode.Subsystems;
 
 import com.arcrobotics.ftclib.command.SubsystemBase;
+import com.arcrobotics.ftclib.controller.PIDController;
 import com.arcrobotics.ftclib.hardware.RevIMU;
 
 import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.hardwareMap;
 
 public class DriveSubsystem extends SubsystemBase {
     private WheelSubsystem LFMotor, LRMotor, RFMotor, RRMotor;
+    private PIDController pidController;
     private RevIMU imu;
+    private double power;
+    private int[] direction = new int[4];
     double damp = 0.5;
 
     public DriveSubsystem() {
@@ -17,6 +21,17 @@ public class DriveSubsystem extends SubsystemBase {
         RRMotor = new WheelSubsystem(hardwareMap, "RB Motor", true);
         imu = new RevIMU(hardwareMap, "imu");
         imu.init();
+
+        pidController = new PIDController(.003, .00003, 0);
+        pidController.reset();
+        pidController.setTolerance(1);
+        resetEncoders();
+
+        power = 0;
+        direction[0] = 1;
+        direction[1] = 1;
+        direction[2] = 1;
+        direction[3] = 1;
     }
 
     /**
@@ -35,10 +50,9 @@ public class DriveSubsystem extends SubsystemBase {
      *                  the Left Front Motor, the Left Rear Motor, the Right Front Motor, and finally the Right Rear Motor
      */
     public void drive(double power, double distance, int[] direction) {
-        LFMotor.driveDistance(direction[0] * power, damp, distance);
-        LRMotor.driveDistance(direction[1] * power, damp, distance);
-        RFMotor.driveDistance(direction[2] * power, damp, distance);
-        RRMotor.driveDistance(direction[3] * power, damp, distance);
+        pidController.setSetPoint(distance);
+        this.power = power;
+        this.direction = direction;
     }
 
     public void resetEncoders() {
@@ -49,7 +63,7 @@ public class DriveSubsystem extends SubsystemBase {
     }
 
     public boolean isDone() {
-        return LFMotor.isDone() && LRMotor.isDone() && RFMotor.isDone() && RRMotor.isDone();
+        return pidController.atSetPoint();
     }
 
     public double getAngle() {
@@ -58,5 +72,27 @@ public class DriveSubsystem extends SubsystemBase {
 
     public void resetAngle() {
         imu.reset();
+    }
+
+    public double getEncoderValues() {
+        double sum = 0;
+        sum += LFMotor.getEncoderValue().getPosition();
+        sum += LRMotor.getEncoderValue().getPosition();
+        sum += RFMotor.getEncoderValue().getPosition();
+        sum += RRMotor.getEncoderValue().getPosition();
+        return sum;
+    }
+
+    @Override
+    public void periodic() {
+        // This method will be called once per scheduler run
+        double pow = pidController.calculate(getEncoderValues());
+        if (pow > power && power > 0) {
+            pow = power;
+        } else if (pow < power && power < 0) {
+            pow = power;
+        }
+
+        drive(pow * damp, direction);
     }
 }
