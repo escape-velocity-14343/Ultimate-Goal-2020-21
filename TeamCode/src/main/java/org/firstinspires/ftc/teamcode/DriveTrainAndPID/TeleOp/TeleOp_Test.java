@@ -4,6 +4,7 @@ package org.firstinspires.ftc.teamcode.DriveTrainAndPID.TeleOp;
 import com.arcrobotics.ftclib.hardware.RevIMU;
 import com.arcrobotics.ftclib.hardware.ServoEx;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
+import com.arcrobotics.ftclib.kinematics.HolonomicOdometry;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -41,21 +42,24 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
 
-@TeleOp(name="TeleOp", group="Iterative TeamCode")
+@TeleOp(name="TeleOp Encoders", group="Iterative TeamCode")
 //@Disabled
-public class TeleOp_Final extends OpMode {
+public class TeleOp_Test extends OpMode {
 
     //defining all of the variables needed for the code
     private ElapsedTime runtime = new ElapsedTime();
-    private Motor LFMotor, LBMotor, RFMotor, RBMotor, conveyorMotor, elevatorMotor, leftShooterMotor, rightShooterMotor;
-    private Servo rightIntakeDownServo, leftIntakeDownServo;//, wobbleGoalClawServo;
-    //private CRServo liftWobbleGoalServo;
-    private RevIMU imu;
-    private double lastAngles = 0;
-    private boolean fieldRelativeMode = false;
-    private double globalAngle, speed = 0.75;
-    private double shooterSpeed = 0.8;
-    private boolean hasBeenPushedX = false, hasBeenPushedY = false;
+    private Motor LFMotor, LBMotor, RFMotor, RBMotor, conveyorMotor, elevatorMotor, rightShooterMotor;
+    private double speed = 0.5;
+
+    // define our trackwidth
+    static final double TRACKWIDTH = 14.5;
+
+    // convert ticks to inches
+    static final double TICKS_TO_INCHES = 76.6;
+
+    static final double centerWheelOffset = 0.5;
+
+    private HolonomicOdometry diffOdom;
 
 
     @Override
@@ -68,51 +72,18 @@ public class TeleOp_Final extends OpMode {
         RBMotor  = new Motor(hardwareMap, "RB Motor", Motor.GoBILDA.RPM_1150);
         conveyorMotor = new Motor(hardwareMap, "Conveyor Motor", Motor.GoBILDA.RPM_435);
         elevatorMotor = new Motor(hardwareMap, "Elevator Motor", Motor.GoBILDA.RPM_84);
-        leftShooterMotor = new Motor(hardwareMap, "Left Shooter Motor", Motor.GoBILDA.RPM_1150);
         rightShooterMotor = new Motor(hardwareMap, "Right Shooter Motor", Motor.GoBILDA.RPM_1150);
 
-
-        //liftWobbleGoalServo = hardwareMap.crservo.get("Lift Wobble Goal Servo");
-        //wobbleGoalClawServo = hardwareMap.get(Servo.class, "Wobble Goal Claw Servo");
-        rightIntakeDownServo = hardwareMap.get(Servo.class, "Right Intake Down Servo");
-        leftIntakeDownServo = hardwareMap.get(Servo.class, "Left Intake Down Servo");
-
-        imu = new RevIMU(hardwareMap, "imu");
 
         //reversing the motors that need to be reversed, otherwise it sets it as forward
         LFMotor.setInverted(false);
         LBMotor.setInverted(false);
         RFMotor.setInverted(true);
         RBMotor.setInverted(true);
-        conveyorMotor.setInverted(true);
-        elevatorMotor.setInverted(true);
-        leftShooterMotor.setInverted(false);
-        rightShooterMotor.setInverted(true);
 
-        rightIntakeDownServo.setDirection(Servo.Direction.REVERSE);
-        leftIntakeDownServo.setDirection(Servo.Direction.FORWARD);
-        //wobbleGoalClawServo.setDirection(Servo.Direction.REVERSE);
-        //liftWobbleGoalServo.setDirection(CRServo.Direction.REVERSE);
-
-        LFMotor.motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        LBMotor.motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        RFMotor.motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        RBMotor.motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
-        conveyorMotor.motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        elevatorMotor.motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        leftShooterMotor.motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        rightShooterMotor.motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
-        //setting up the IMU on the expansion hubs, for our use
-        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
-
-        parameters.mode = BNO055IMU.SensorMode.IMU;
-        parameters.angleUnit = BNO055IMU.AngleUnit.DEGREES;
-        parameters.accelUnit = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
-        parameters.loggingEnabled = false;
-
-        imu.init(parameters);
+        conveyorMotor.resetEncoder();
+        elevatorMotor.resetEncoder();
+        rightShooterMotor.resetEncoder();
 
         telemetry.addData("Status", "Initialized");
     }
@@ -133,35 +104,11 @@ public class TeleOp_Final extends OpMode {
         //defining the value to get from phones
         double LFPower, LBPower, RFPower, RBPower, xValue, turnValue, yValue;
 
-        //checking to see if field relative mode is on
-        if (gamepad1.back) {
-            resetAngle();
-            fieldRelativeMode = !fieldRelativeMode;
-        }
-
-        telemetry.addData("FieldRelative?", fieldRelativeMode);
 
         //getting the movement values from the gamepad
         yValue = gamepad1.left_stick_y;
         turnValue = gamepad1.right_stick_x;
         xValue = gamepad1.left_stick_x;
-
-        //changing the values for the field relative mode
-        if (fieldRelativeMode){
-            LFMotor.setInverted(true);
-            LBMotor.setInverted(true);
-            RFMotor.setInverted(false);
-            RBMotor.setInverted(false);
-            /*double angle = getAngle();
-            double tempX = (xValue * Math.cos(Math.toRadians(angle))) - (yValue * Math.sin(Math.toRadians(angle)));
-            yValue = (xValue * Math.sin(Math.toRadians(angle))) + (yValue * Math.cos(Math.toRadians(angle)));
-            xValue = tempX;*/
-        } else {
-            LFMotor.setInverted(false);
-            LBMotor.setInverted(false);
-            RFMotor.setInverted(true);
-            RBMotor.setInverted(true);
-        }
 
         //getting the values for the powers for each motor
         LFPower = Range.clip(-yValue + turnValue + xValue,-1,1);
@@ -204,67 +151,7 @@ public class TeleOp_Final extends OpMode {
         if (gamepad1.a){
             speed = 0.3;
         } else{
-            speed = 0.75;
-        }
-
-        //shooters
-        if (gamepad1.right_trigger > 0.0){
-            rightShooterMotor.set(shooterSpeed);
-            leftShooterMotor.set(shooterSpeed);
-        } else{
-            rightShooterMotor.set(0.0);
-            leftShooterMotor.set(0.0);
-        }
-
-        //conveyor & elevator
-        if (gamepad1.left_trigger > 0.0){
-            conveyorMotor.set(1.0);
-
-        } else{
-            conveyorMotor.set(0.0);
-        }
-
-
-        //revers converyor and elevator to unstuck smth.
-        if (gamepad1.left_bumper){
-            conveyorMotor.set(-1.0);
-        }
-
-        if (gamepad1.x){
-            rightIntakeDownServo.setPosition(Servo.MAX_POSITION);
-            leftIntakeDownServo.setPosition(Servo.MAX_POSITION);
-        }
-
-        if (gamepad2.x && !hasBeenPushedX){
-            shooterSpeed = shooterSpeed - 0.005;
-            hasBeenPushedX = true;
-        } else {
-            hasBeenPushedX = false;
-        }
-
-        if (gamepad2.y && !hasBeenPushedY){
-            shooterSpeed = shooterSpeed + 0.005;
-            hasBeenPushedY = true;
-        } else {
-            hasBeenPushedY = false;
-        }
-
-        telemetry.addData("Shooter Speed: ", shooterSpeed);
-
-//        if (gamepad1.b){
-//            wobbleGoalClawServo.setPosition(Servo.MIN_POSITION);
-//        }
-//
-//        if (gamepad1.y){
-//            wobbleGoalClawServo.setPosition(Servo.MAX_POSITION);
-//        }
-
-        if (gamepad1.right_bumper || gamepad1.right_trigger > 0.0) {
-            elevatorMotor.set(1);
-        } else if (gamepad1.left_bumper){
-            elevatorMotor.set(-1);
-        } else {
-            elevatorMotor.set(0.0);
+            speed = 0.5;
         }
 
 
@@ -280,36 +167,20 @@ public class TeleOp_Final extends OpMode {
         RBMotor.set(Range.clip(RBPower, -speed, speed));
 
         telemetry.addData("Status", "Run Time: " + runtime.toString());
+
+        telemetry.addData("Left: ", conveyorMotor.encoder.getDistance());
+        telemetry.addData("Left: ", conveyorMotor.encoder.getRevolutions());
+        telemetry.addData("Left: ", conveyorMotor.encoder.getPosition());
+        telemetry.addData("Right: ", elevatorMotor.encoder.getDistance());
+        telemetry.addData("Right: ", elevatorMotor.encoder.getRevolutions());
+        telemetry.addData("Right: ", elevatorMotor.encoder.getPosition());
+        telemetry.addData("Rear: ", rightShooterMotor.encoder.getDistance());
+        telemetry.addData("Rear: ", rightShooterMotor.encoder.getRevolutions());
+        telemetry.addData("Rear: ", rightShooterMotor.encoder.getPosition());
     }
 
 
     @Override
     public void stop() {
-    }
-
-    //resetting the angle in the IMU
-    public void resetAngle() {
-        imu.reset();
-        lastAngles = 0;
-        globalAngle = 0;
-    }
-
-    //getting the current angle of the IMU
-    public double getAngle() {
-
-        double angles = imu.getAngles()[0];
-
-        double deltaAngle = angles - lastAngles;
-
-        if (deltaAngle < -180)
-            deltaAngle += 360;
-        else if (deltaAngle > 180)
-            deltaAngle -= 360;
-
-        globalAngle += deltaAngle;
-
-        lastAngles = angles;
-
-        return globalAngle;
     }
 }
