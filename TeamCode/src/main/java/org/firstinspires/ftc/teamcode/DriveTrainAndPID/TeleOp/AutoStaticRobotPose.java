@@ -25,7 +25,7 @@ public class AutoStaticRobotPose extends LinearOpMode {
     public static final double CENTER_WHEEL_OFFSET = 0.5;
     public static final double WHEEL_DIAMETER = 1.49606;
     // if needed, one can add a gearing term here
-    public static final double TICKS_PER_REV = 1440;
+    public static final double TICKS_PER_REV = 360;
     public static final double DISTANCE_PER_PULSE = Math.PI * WHEEL_DIAMETER / TICKS_PER_REV;
 
     @Override
