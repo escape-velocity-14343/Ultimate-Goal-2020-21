@@ -62,21 +62,22 @@ public class Blue extends CommandOpMode {
         //CODE FROM HERE
         Rotation2d zero = new Rotation2d(0);
 
-        Pose2d startT = new Pose2d(0, 0, zero);
-        Waypoint start = new StartWaypoint(startT);
+        Pose2d startBlueOut = new Pose2d(102.0, 198.0, zero);
+        Pose2d startBlueIn = new Pose2d(102.0, 175.0, zero);
+        Waypoint start = new StartWaypoint(startBlueOut);
 
-        Pose2d disks = new Pose2d(17, -11, zero);
+        Pose2d disks = new Pose2d(119, 187, zero);
         Waypoint disk = new EndWaypoint(disks, 30, 30, 4, 1, 1);
         Waypoint diskStart = new StartWaypoint(disks);
         ppCommand = new PurePursuitCommand(m_robotDrive, m_odometry, start, disk);
 
-        Pose2d highGoal = new Pose2d(58, -11, zero);
+        Pose2d highGoal = new Pose2d(160, 187, zero);
         Waypoint highGoalEnd = new EndWaypoint(highGoal, 30, 30, 4, 1, 1);
         Waypoint highGoalStart = new StartWaypoint(highGoal);
 
         ppCommand = new PurePursuitCommand(m_robotDrive, m_odometry, diskStart, highGoalEnd);
 
-        Pose2d powerShot = new Pose2d(58, -31, zero);
+        Pose2d powerShot = new Pose2d(160, 167, zero);
         Waypoint powerShotEnd = new EndWaypoint(powerShot, 30, 30, 4, 1, 1);
         Waypoint powerShotStart = new StartWaypoint(powerShot);
 
@@ -87,16 +88,14 @@ public class Blue extends CommandOpMode {
         Waypoint squar;
         int detection = 0;
 
-        //Pose2d startBlueOut = new Pose2d(102.0, 198.0, zero);
-
         if (detection == 0) {
-            square = new Pose2d(58, -1, zero); // Square A
+            square = new Pose2d(160, 197, zero); // Square A
         } else if (detection == 1) {
             //Pick up 1 disk
-            square = new Pose2d(73, -17, zero); // Square B
+            square = new Pose2d(175, 187, zero); // Square B
         } else {
             //Pick up 3 disks
-            square = new Pose2d(98, -12, zero); // Square C
+            square = new Pose2d(200, 210, zero); // Square C
         }
 
         squar = new EndWaypoint(square, 30, 30, 4, 1, 1);
@@ -107,7 +106,7 @@ public class Blue extends CommandOpMode {
         //Run ppCommand
         //Place the wobble goal
 
-        Pose2d powerTarget = new Pose2d(58, -11, zero); //Location of power target shooting and parking
+        Pose2d powerTarget = new Pose2d(160.0, 187.0, zero); //Location of power target shooting and parking
         Waypoint powerTar = new EndWaypoint(powerTarget, 30, 30, 4, 1, 1);
         ppCommand = new PurePursuitCommand(m_robotDrive, m_odometry, squarStart, powerTar);
 
