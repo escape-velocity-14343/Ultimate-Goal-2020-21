@@ -51,8 +51,10 @@ public class ShooterPIDTesting extends LinearOpMode {
         while (opModeIsActive()) {
             leftShooterMotor.set(0.8);
             rightShooterMotor.set(0.8);
+            telemetry.addData("Left Shooter Motor Error", leftShooterMotor.getVelocity() - 0.8);
+            telemetry.addData("Right Shooter Motor Error", rightShooterMotor.getVelocity()-0.8);
             telemetry.addData("Left Shooter Motor", leftShooterMotor.getVelocity());
-            telemetry.addData("Right Shooter Motor",rightShooterMotor.getVelocity());
+            telemetry.addData("Right Shooter Motor", rightShooterMotor.getVelocity());
             telemetry.log();
             telemetry.update();
         }
