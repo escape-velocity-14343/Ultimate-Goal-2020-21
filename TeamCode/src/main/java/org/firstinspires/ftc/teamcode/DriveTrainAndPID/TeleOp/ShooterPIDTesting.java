@@ -27,9 +27,6 @@ public class ShooterPIDTesting extends LinearOpMode {
     private ElapsedTime runtime = new ElapsedTime();
     MotorEx leftShooterMotor, rightShooterMotor;
 
-    //no. of ticks per one revolution of the yellow jacket motors
-    int Ticks_Per_Rev = 1316;
-
     @Override
     public void runOpMode(){
         // Initialize the hardware variables.
@@ -52,7 +49,7 @@ public class ShooterPIDTesting extends LinearOpMode {
             leftShooterMotor.set(0.8);
             rightShooterMotor.set(0.8);
             telemetry.addData("Left Shooter Motor Error", leftShooterMotor.getVelocity() - 0.8);
-            telemetry.addData("Right Shooter Motor Error", rightShooterMotor.getVelocity()-0.8);
+            telemetry.addData("Right Shooter Motor Error", rightShooterMotor.getVelocity() - 0.8);
             telemetry.addData("Left Shooter Motor", leftShooterMotor.getVelocity());
             telemetry.addData("Right Shooter Motor", rightShooterMotor.getVelocity());
             telemetry.log();
