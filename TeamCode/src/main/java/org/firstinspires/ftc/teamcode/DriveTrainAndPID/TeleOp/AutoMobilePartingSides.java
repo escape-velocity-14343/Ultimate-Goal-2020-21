@@ -107,7 +107,10 @@ public class AutoMobilePartingSides extends LinearOpMode {
             //drive forward to get under the bridge
             //forward, lefts, forward, lefts, shoot
 
-            drive.DriveForwardDistance(1, 27);
+            drive.StrafeLeftDistance(2, 10);
+            drive.TurnLeftDistance(2, 5);
+
+            drive.DriveForwardDistance(1, 17);
             String rec = "";
             for (int j = 0; j < 10000001; j++) {
                 if (tfod != null) {
@@ -137,7 +140,7 @@ public class AutoMobilePartingSides extends LinearOpMode {
             drive.DriveForwardDistance(1, 8);
             drive.StrafeLeftDistance(2, 10);
 
-            /*rightShooterMotor.set(0.8);
+            rightShooterMotor.set(0.8);
             leftShooterMotor.set(0.8);
             elevatorMotor.set(1.0);
             Thread.sleep(1000);
@@ -145,9 +148,17 @@ public class AutoMobilePartingSides extends LinearOpMode {
             Thread.sleep(500);
             conveyorMotor.set(0);
             Thread.sleep(1000);
-            conveyorMotor.set(1.0);*/
+            conveyorMotor.set(1.0);
 
             drive.DriveForwardDistance(1, 13);
+
+            if (rec == "Quad") {
+                //
+            } else if (rec == "Single") {
+                //
+            } else {
+
+            }
         }
 
         if (tfod != null) {
