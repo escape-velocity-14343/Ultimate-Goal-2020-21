@@ -48,8 +48,8 @@ public class TeleOp_Final extends OpMode {
     //defining all of the variables needed for the code
     private ElapsedTime runtime = new ElapsedTime();
     private Motor LFMotor, LBMotor, RFMotor, RBMotor, conveyorMotor, elevatorMotor, leftShooterMotor, rightShooterMotor;
-    private Servo rightIntakeDownServo, leftIntakeDownServo;//, wobbleGoalClawServo;
-    //private CRServo liftWobbleGoalServo;
+    private Servo rightIntakeDownServo, leftIntakeDownServo, wobbleGoalClawServo;
+    private CRServo liftWobbleGoalServo;
     private RevIMU imu;
     private double lastAngles = 0;
     private boolean fieldRelativeMode = false;
@@ -72,8 +72,8 @@ public class TeleOp_Final extends OpMode {
         rightShooterMotor = new Motor(hardwareMap, "Right Shooter Motor", Motor.GoBILDA.RPM_1150);
 
 
-        //liftWobbleGoalServo = hardwareMap.crservo.get("Lift Wobble Goal Servo");
-        //wobbleGoalClawServo = hardwareMap.get(Servo.class, "Wobble Goal Claw Servo");
+        liftWobbleGoalServo = hardwareMap.crservo.get("Lift Wobble Goal Servo");
+        wobbleGoalClawServo = hardwareMap.get(Servo.class, "Wobble Goal Claw Servo");
         rightIntakeDownServo = hardwareMap.get(Servo.class, "Right Intake Down Servo");
         leftIntakeDownServo = hardwareMap.get(Servo.class, "Left Intake Down Servo");
 
@@ -91,8 +91,8 @@ public class TeleOp_Final extends OpMode {
 
         rightIntakeDownServo.setDirection(Servo.Direction.REVERSE);
         leftIntakeDownServo.setDirection(Servo.Direction.FORWARD);
-        //wobbleGoalClawServo.setDirection(Servo.Direction.REVERSE);
-        //liftWobbleGoalServo.setDirection(CRServo.Direction.REVERSE);
+        wobbleGoalClawServo.setDirection(Servo.Direction.REVERSE);
+        liftWobbleGoalServo.setDirection(CRServo.Direction.FORWARD);
 
         LFMotor.motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         LBMotor.motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -251,13 +251,19 @@ public class TeleOp_Final extends OpMode {
 
         telemetry.addData("Shooter Speed: ", shooterSpeed);
 
-//        if (gamepad1.b){
-//            wobbleGoalClawServo.setPosition(Servo.MIN_POSITION);
-//        }
-//
-//        if (gamepad1.y){
-//            wobbleGoalClawServo.setPosition(Servo.MAX_POSITION);
-//        }
+        if (gamepad1.b){
+            wobbleGoalClawServo.setPosition(Servo.MAX_POSITION-Servo.MIN_POSITION/2+Servo.MIN_POSITION);
+        }
+
+        if (gamepad1.y){
+            wobbleGoalClawServo.setPosition(Servo.MIN_POSITION);
+        }
+
+        if (gamepad1.right_bumper) {
+            liftWobbleGoalServo.setPower(1.0);
+        } else {
+            liftWobbleGoalServo.setPower(0.0);
+        }
 
         if (gamepad1.right_bumper || gamepad1.right_trigger > 0.0) {
             elevatorMotor.set(1);
